@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#12100e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AdMech Cards">
 <title>AdMech Flash Cards</title>
 <!-- ?v= is rewritten to the commit sha when the site is deployed, so a new
      version is never shadowed by a cached copy of the old one. -->
@@ -38,6 +42,7 @@
     </div>
     <div id="list-form" hidden>
       <textarea id="list-input" rows="6" spellcheck="false"
+        autocapitalize="off" autocorrect="off" autocomplete="off"
         placeholder="Paste your army list export here — the units in it get selected, and each one only drills the weapons you took."></textarea>
       <button id="list-load" class="primary">Load list</button>
       <button id="list-cancel" class="secondary">Cancel</button>
@@ -74,8 +79,12 @@
     <p id="card-sub" class="card-sub"></p>
     <div id="statline" class="statline"></div>
     <p id="card-extra" class="card-extra"></p>
-    <p id="hint" class="hint">tap to reveal</p>
+    <p id="hint" class="hint">tap a single stat to peek at just that one</p>
     <details id="card-detail" hidden><summary>Datasheet</summary><div id="detail-body"></div></details>
+  </div>
+
+  <div id="revealbar" class="bottombar" hidden>
+    <button id="reveal" class="primary">Reveal</button>
   </div>
 
   <div id="gradebar" class="bottombar two" hidden>

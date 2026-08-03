@@ -32,6 +32,25 @@ html, body {
   color: var(--text);
   font: 16px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   overscroll-behavior-y: contain;
+  overflow-x: hidden;
+  /* Kills double-tap-to-zoom (and the 300ms tap delay with it), and stops
+     rotation from rescaling the text. */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Drilling means tapping the same spot repeatedly — without this you get text
+   selection and the long-press callout instead of a card flip. Prose and the
+   paste box stay selectable. */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.sheet, .ability, #card-extra, #list-input, .note {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 body {
@@ -97,6 +116,8 @@ body {
 .bulk { display: flex; gap: 4px; }
 
 .link-btn {
+  min-width: 44px;
+  min-height: 44px;
   padding: 8px 10px;
   font-size: 13px;
   color: var(--brass);
@@ -137,7 +158,8 @@ button.wide {
   width: 100%;
   padding: 10px;
   color: var(--text);
-  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Under 16px, iOS zooms the page in when the field takes focus. */
+  font: 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -294,7 +316,13 @@ button.secondary { background: var(--panel-2); border-color: var(--line); color:
   text-transform: uppercase;
   color: var(--brass);
 }
-#card-title { margin: 0; font-size: 24px; line-height: 1.2; font-weight: 650; }
+#card-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 650;
+  overflow-wrap: break-word;
+}
 .card-sub { margin: 6px 0 0; font-size: 14px; color: var(--dim); }
 
 .statline {

@@ -4,9 +4,10 @@ Mobile flash cards for learning Adeptus Mechanicus datasheets: model statlines
 (M, T, Sv, W, Ld, OC, invulnerable save) and weapon profiles (Range, A, BS/WS,
 S, AP, D, keywords).
 
-Pick the units you want to drill, tap a card to reveal the statline, mark
-yourself right or wrong. Cards you miss come back later in the same session,
-and how well you know each card is remembered between sessions.
+Pick the units you want to drill, hit Reveal to turn the statline over, and
+mark yourself right or wrong — or tap a single stat to peek at just that one.
+Cards you miss come back later in the same session, and how well you know each
+card is remembered between sessions.
 
 ## Army lists
 

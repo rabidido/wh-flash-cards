@@ -345,6 +345,7 @@ function renderCard() {
     </button>`).join('');
   $('card-extra').textContent = '';
   $('hint').hidden = false;
+  $('revealbar').hidden = false;
   $('gradebar').hidden = true;
   $('card-detail').hidden = true;
   $('card-detail').open = false;
@@ -371,6 +372,7 @@ function revealAll() {
   session.card.values.forEach((_, i) => revealStat(i));
   $('card-extra').textContent = session.card.extra;
   $('hint').hidden = true;
+  $('revealbar').hidden = true;
   $('gradebar').hidden = false;
   $('card-detail').hidden = false;
   $('detail-body').innerHTML = datasheetHTML(session.card.unit);
@@ -414,6 +416,7 @@ function show(view) {
   $('startbar').hidden = view !== 'setup';
   $('summarybar').hidden = view !== 'summary';
   $('gradebar').hidden = true;
+  $('revealbar').hidden = true;
   $('back').hidden = view === 'setup';
   $('reset-progress').hidden = view !== 'setup';
   $('title').textContent = view === 'setup' ? 'Adeptus Mechanicus'
@@ -515,6 +518,7 @@ $('card').addEventListener('click', (e) => {
   revealAll();
 });
 
+$('reveal').addEventListener('click', revealAll);
 $('hit').addEventListener('click', () => grade(true));
 $('miss').addEventListener('click', () => grade(false));
 
@@ -523,6 +527,13 @@ $('reset-progress').addEventListener('click', () => {
   progress = {};
   store.drop('progress');
 });
+
+// iOS ignores user-scalable=no, so pinch has to be refused directly. Nothing
+// here benefits from zooming, and a stray pinch mid-drill is only ever a
+// nuisance to undo one-handed.
+for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+}
 
 /* ── boot ─────────────────────────────────────────────── */
 fetch('data/admech.json')
