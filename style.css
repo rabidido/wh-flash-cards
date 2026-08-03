@@ -18,6 +18,14 @@
    [hidden], leaving invisible bars swallowing taps. */
 [hidden] { display: none !important; }
 
+/* The native tap highlight is off, so every touch target states its own
+   pressed look — without it a tap that lands looks like nothing happened. */
+button:active { filter: brightness(1.4); }
+.unit-pick:active, .peek:active, .card:active, .stat:active, button.wide:active {
+  background: #322c28;
+  filter: none;
+}
+
 html, body {
   margin: 0;
   background: var(--bg);
