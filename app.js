@@ -36,6 +36,7 @@ let kinds = new Set(store.get('kinds', ['unit', 'ranged', 'melee']));
 let progress = store.get('progress', {});      // card id -> {seen, ok, streak}
 let loadout = store.get('loadout', {});        // unit name -> weapon names taken
 let listName = store.get('listname', '');
+let skipped = new Set(store.get('skipped', [])); // card ids you never want to see
 
 const session = { queue: [], card: null, total: 0, done: 0, answers: 0, right: 0, missed: [] };
 
@@ -74,6 +75,9 @@ function cardsFor(unit) {
   const out = [];
   if (kinds.has('unit')) {
     for (const model of unit.models) {
+      const pills = [];
+      if (model.inv) pills.push({ text: `Invulnerable ${model.inv}`, kind: 'save' });
+      if (unit.fnp) pills.push({ text: `Feel No Pain ${unit.fnp}`, kind: 'save' });
       out.push({
         id: `${unit.name}|unit|${model.name}`,
         kindLabel: 'Unit profile',
@@ -81,7 +85,7 @@ function cardsFor(unit) {
         sub: model.name === unit.name ? unit.role : `${unit.name} · ${unit.role}`,
         labels: UNIT_LABELS,
         values: model.stats,
-        extra: model.inv ? `Invulnerable save ${model.inv}` : '',
+        pills,
         unit
       });
     }
@@ -98,12 +102,21 @@ function cardsFor(unit) {
         sub: unit.name,
         labels: kind === 'ranged' ? RANGED_LABELS : MELEE_LABELS,
         values: weapon.stats,
-        extra: weapon.kw && weapon.kw !== '-' ? weapon.kw : '',
+        pills: keywordPills(weapon.kw),
         unit
       });
     }
   }
-  return out;
+  return out.filter((card) => !skipped.has(card.id));
+}
+
+function keywordPills(keywords) {
+  if (!keywords || keywords === '-') return [];
+  return keywords.split(',').map((k) => ({ text: k.trim() })).filter((p) => p.text);
+}
+
+function pillsHTML(pills) {
+  return pills.map((p) => `<span class="pill${p.kind ? ' ' + p.kind : ''}">${esc(p.text)}</span>`).join('');
 }
 
 function selectedCards() {
@@ -273,6 +286,9 @@ function renderUnits() {
     }
   }
   $('unit-list').innerHTML = html;
+  $('skip-row').hidden = skipped.size === 0;
+  $('skip-count').textContent =
+    `${skipped.size} card${skipped.size === 1 ? '' : 's'} skipped`;
   renderStartBar();
 }
 
@@ -287,15 +303,20 @@ function datasheetHTML(unit) {
   const rows = (list, labels) => `<table class="tbl">
     <tr><th></th>${labels.map((l) => `<th>${l}</th>`).join('')}</tr>
     ${list.map((w) => `<tr><td>${esc(w.name)}</td>${w.stats.map((s) => `<td>${esc(s)}</td>`).join('')}</tr>
-      ${w.kw && w.kw !== '-' ? `<tr><td class="kw" colspan="7">${esc(w.kw)}</td></tr>` : ''}`).join('')}
+      ${w.kw && w.kw !== '-'
+        ? `<tr><td class="kw" colspan="7"><span class="pills">${pillsHTML(keywordPills(w.kw))}</span></td></tr>`
+        : ''}`).join('')}
   </table>`;
+
+  const savePill = (text) => `<span class="pill save">${esc(text)}</span>`;
 
   let html = '<div class="sheet">';
   html += '<h3>Profile</h3>';
   html += `<table class="tbl"><tr><th></th>${UNIT_LABELS.map((l) => `<th>${l}</th>`).join('')}</tr>
     ${unit.models.map((m) => `<tr><td>${esc(m.name)}</td>${m.stats.map((s) => `<td>${esc(s)}</td>`).join('')}</tr>
-      ${m.inv ? `<tr><td class="kw" colspan="7">Invulnerable save ${esc(m.inv)}</td></tr>` : ''}`).join('')}
+      ${m.inv ? `<tr><td class="kw" colspan="7">${savePill('Invulnerable ' + m.inv)}</td></tr>` : ''}`).join('')}
   </table>`;
+  if (unit.fnp) html += `<div class="pills">${savePill('Feel No Pain ' + unit.fnp)}</div>`;
 
   if (unit.ranged.length) html += '<h3>Ranged weapons</h3>' + rows(unit.ranged, RANGED_LABELS);
   if (unit.melee.length) html += '<h3>Melee weapons</h3>' + rows(unit.melee, MELEE_LABELS);
@@ -343,7 +364,7 @@ function renderCard() {
     <button class="stat${card.values[i].length > 3 ? ' small' : ''}" data-i="${i}">
       <span class="lbl">${label}</span><span class="val">?</span>
     </button>`).join('');
-  $('card-extra').textContent = '';
+  $('card-pills').innerHTML = '';
   $('hint').hidden = false;
   $('revealbar').hidden = false;
   $('gradebar').hidden = true;
@@ -370,7 +391,7 @@ function revealAll() {
   if ($('card').dataset.revealed === 'true') return;
   $('card').dataset.revealed = 'true';
   session.card.values.forEach((_, i) => revealStat(i));
-  $('card-extra').textContent = session.card.extra;
+  $('card-pills').innerHTML = pillsHTML(session.card.pills);
   $('hint').hidden = true;
   $('revealbar').hidden = true;
   $('gradebar').hidden = false;
@@ -399,6 +420,17 @@ function grade(ok) {
   nextCard();
 }
 
+function skipCard() {
+  const card = session.card;
+  skipped.add(card.id);
+  store.set('skipped', [...skipped]);
+  // Drop every copy of it, including one requeued after an earlier miss.
+  session.queue = session.queue.filter((c) => c.id !== card.id);
+  session.missed = session.missed.filter((c) => c.id !== card.id);
+  session.total = Math.max(session.done, session.total - 1);
+  nextCard();
+}
+
 function endSession() {
   const acc = session.answers ? Math.round((session.right / session.answers) * 100) : 0;
   $('score').textContent = `${session.total} card${session.total === 1 ? '' : 's'} · ${acc}% correct`;
@@ -412,6 +444,8 @@ function endSession() {
 
 /* ── view switching ───────────────────────────────────── */
 function show(view) {
+  // Skipping during a session changes the counts behind the setup screen.
+  if (view === 'setup' && DATA) renderUnits();
   for (const id of ['setup', 'drill', 'summary']) $(id).hidden = id !== view;
   $('startbar').hidden = view !== 'setup';
   $('summarybar').hidden = view !== 'summary';
@@ -519,6 +553,13 @@ $('card').addEventListener('click', (e) => {
 });
 
 $('reveal').addEventListener('click', revealAll);
+$('skip').addEventListener('click', skipCard);
+
+$('skip-restore').addEventListener('click', () => {
+  skipped.clear();
+  store.drop('skipped');
+  renderUnits();
+});
 $('hit').addEventListener('click', () => grade(true));
 $('miss').addEventListener('click', () => grade(false));
 

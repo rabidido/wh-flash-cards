@@ -78,7 +78,7 @@ def characteristics(profile):
     }
 
 
-def collect_profiles(node, index, out, seen, depth=0):
+def collect_profiles(node, index, out, rules, seen, depth=0):
     """Walk a datasheet's entry tree, gathering every profile it can show."""
     if node is None or depth > 12 or id(node) in seen:
         return
@@ -91,15 +91,28 @@ def collect_profiles(node, index, out, seen, depth=0):
             target = index.get(link.get("targetId"))
             if target is not None:
                 out.append(target)
+        elif link.get("type") == "rule":
+            rules.append(link)
     for key in ("selectionEntries", "selectionEntryGroups"):
         for child in node.get(key, []) or []:
             if child.get("name") in EXCLUDED_ENTRIES:
                 continue
-            collect_profiles(child, index, out, seen, depth + 1)
+            collect_profiles(child, index, out, rules, seen, depth + 1)
     for link in node.get("entryLinks", []) or []:
         if link.get("name") in EXCLUDED_ENTRIES:
             continue
-        collect_profiles(index.get(link.get("targetId")), index, out, seen, depth + 1)
+        collect_profiles(index.get(link.get("targetId")), index, out, rules, seen, depth + 1)
+
+
+def feel_no_pain(rules):
+    """Feel No Pain is a rule link whose value is appended onto its name."""
+    for link in rules:
+        if clean(link.get("name")) != "Feel No Pain":
+            continue
+        for modifier in link.get("modifiers", []) or []:
+            if modifier.get("field") == "name" and modifier.get("type") == "append":
+                return clean(modifier.get("value"))
+    return ""
 
 
 def row(names, values):
@@ -107,8 +120,8 @@ def row(names, values):
 
 
 def build_unit(name, entry, index):
-    profiles = []
-    collect_profiles(entry, index, profiles, set())
+    profiles, rules = [], []
+    collect_profiles(entry, index, profiles, rules, set())
 
     models, ranged, melee, abilities, transport = [], [], [], [], []
     deduped = set()
@@ -169,6 +182,7 @@ def build_unit(name, entry, index):
     return {
         "name": name,
         "role": role,
+        "fnp": feel_no_pain(rules),
         "keywords": keywords,
         "models": models,
         "ranged": ranged,

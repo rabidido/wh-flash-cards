@@ -57,6 +57,10 @@
         <button data-bulk="none" class="link-btn">None</button>
       </div>
     </div>
+    <div id="skip-row" hidden>
+      <span id="skip-count"></span>
+      <button id="skip-restore" class="link-btn">Restore</button>
+    </div>
     <div id="unit-list"></div>
   </section>
 
@@ -78,12 +82,13 @@
     <h2 id="card-title"></h2>
     <p id="card-sub" class="card-sub"></p>
     <div id="statline" class="statline"></div>
-    <p id="card-extra" class="card-extra"></p>
+    <div id="card-pills" class="pills"></div>
     <p id="hint" class="hint">tap a single stat to peek at just that one</p>
     <details id="card-detail" hidden><summary>Datasheet</summary><div id="detail-body"></div></details>
   </div>
 
-  <div id="revealbar" class="bottombar" hidden>
+  <div id="revealbar" class="bottombar two" hidden>
+    <button id="skip" class="secondary">Skip</button>
     <button id="reveal" class="primary">Reveal</button>
   </div>
 

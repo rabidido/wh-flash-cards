@@ -6,8 +6,12 @@ S, AP, D, keywords).
 
 Pick the units you want to drill, hit Reveal to turn the statline over, and
 mark yourself right or wrong — or tap a single stat to peek at just that one.
-Cards you miss come back later in the same session, and how well you know each
-card is remembered between sessions.
+Revealing also shows pills for the weapon's keywords, or for a model's
+invulnerable save and Feel No Pain. Cards you miss come back later in the same
+session, and how well you know each card is remembered between sessions.
+
+Skip drops a card you don't care about. It leaves the current session
+immediately and never comes back, until you hit Restore above the unit list.
 
 ## Army lists
 
@@ -89,8 +93,13 @@ tools/build_data.py generator
 
 Browser state lives in `localStorage` under the `admech-fc:` prefix: unit
 selection, which card kinds are enabled, the loaded list's per-unit weapons,
-and a per-card streak counter used to put weaker cards earlier in a session.
-The ↺ button on the setup screen clears the streaks.
+skipped card ids, and a per-card streak counter used to put weaker cards
+earlier in a session. The ↺ button on the setup screen clears the streaks.
+
+Feel No Pain is not a profile in the source data — it is a rule link whose
+value is appended to its name (`Feel No Pain` + `5+`), so the generator reads
+it from the rule links a datasheet reaches, and only when it carries a
+concrete value. Invulnerable saves come from the `InSv` characteristic.
 
 Not affiliated with Games Workshop. Warhammer 40,000 is a trademark of Games
 Workshop Ltd.
