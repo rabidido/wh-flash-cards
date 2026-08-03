@@ -366,7 +366,9 @@ button.secondary { background: var(--panel-2); border-color: var(--line); color:
 
 .pill {
   display: inline-block;
-  padding: 4px 10px;
+  /* Pills are tap targets both before and after they turn over. */
+  padding: 7px 12px;
+  font-family: inherit;
   font-size: 12px;
   line-height: 1.45;
   color: var(--brass);

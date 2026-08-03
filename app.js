@@ -421,8 +421,10 @@ function renderCard() {
     <button class="stat${card.values[i].length > 3 ? ' small' : ''}" data-i="${i}">
       <span class="lbl">${label}</span><span class="val">?</span>
     </button>`).join('');
-  // Show how many keywords there are to remember, without saying which.
-  $('card-pills').innerHTML = card.pills.map(() => '<span class="pill ghost">?</span>').join('');
+  // One empty slot per keyword (or save): you know how many you are trying to
+  // remember, and each one can be turned over on its own.
+  $('card-pills').innerHTML = card.pills
+    .map((_, i) => `<button class="pill ghost" data-pill="${i}">?</button>`).join('');
   $('card-text').hidden = true;
   $('card-text').innerHTML = '';
   $('hint').hidden = prose;
@@ -438,6 +440,11 @@ function renderCard() {
   const acc = session.answers ? Math.round((session.right / session.answers) * 100) : 100;
   $('counter').textContent =
     `${session.done} / ${session.total} learned · ${session.queue.length + 1} in queue · ${acc}% correct`;
+}
+
+function revealPill(i) {
+  const slot = $('card-pills').querySelector(`[data-pill="${i}"]`);
+  if (slot) slot.outerHTML = pillsHTML([session.card.pills[i]]);
 }
 
 function revealStat(i) {
@@ -609,6 +616,13 @@ $('redo').addEventListener('click', () => {
 });
 
 $('card').addEventListener('click', (e) => {
+  // An empty slot turns over on its own, like a single stat does.
+  const slot = e.target.closest('[data-pill]');
+  if (slot) {
+    revealPill(Number(slot.dataset.pill));
+    return;
+  }
+
   // A revealed keyword pill explains itself when you tap it.
   const pill = e.target.closest('[data-rule]');
   if (pill) {
