@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12100e">
 <title>AdMech Flash Cards</title>
-<link rel="stylesheet" href="style.css">
+<!-- ?v= is rewritten to the commit sha when the site is deployed, so a new
+     version is never shadowed by a cached copy of the old one. -->
+<link rel="stylesheet" href="style.css?v=dev">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚙</text></svg>">
 </head>
 <body>
@@ -27,22 +29,25 @@
     <div class="panel-head">
       <h2>Army list</h2>
       <div class="bulk">
-        <button id="list-toggle" class="link-btn">Paste</button>
         <button id="list-clear" class="link-btn" hidden>Clear</button>
       </div>
     </div>
     <p id="list-status" class="note pad"></p>
+    <div class="pad-box">
+      <button id="list-toggle" class="wide">Paste an army list</button>
+    </div>
     <div id="list-form" hidden>
       <textarea id="list-input" rows="6" spellcheck="false"
-        placeholder="Paste an army list export here to pick the units in it and drill only the weapons you took."></textarea>
+        placeholder="Paste your army list export here — the units in it get selected, and each one only drills the weapons you took."></textarea>
       <button id="list-load" class="primary">Load list</button>
+      <button id="list-cancel" class="secondary">Cancel</button>
     </div>
   </section>
 
   <section class="panel">
     <div class="panel-head">
       <h2>Units</h2>
-      <div class="bulk">
+      <div class="bulk" id="unit-bulk">
         <button data-bulk="all" class="link-btn">All</button>
         <button data-bulk="none" class="link-btn">None</button>
       </div>
@@ -95,6 +100,6 @@
   <button id="again" class="primary">New session</button>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=dev"></script>
 </body>
 </html>

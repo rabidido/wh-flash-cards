@@ -234,6 +234,7 @@ function renderListStatus(message) {
   $('list-status').textContent = message !== undefined ? message
     : active ? `${listName ? listName + ' · ' : ''}weapons limited to the list` : '';
   $('list-clear').hidden = !active;
+  $('list-toggle').textContent = active ? 'Paste a different list' : 'Paste an army list';
 }
 
 /* ── setup view ───────────────────────────────────────── */
@@ -464,7 +465,7 @@ $('unit-list').addEventListener('click', (e) => {
   }
 });
 
-document.querySelector('.bulk').addEventListener('click', (e) => {
+$('unit-bulk').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-bulk]');
   if (!btn) return;
   selected = btn.dataset.bulk === 'all' ? new Set(DATA.units.map((u) => u.name)) : new Set();
@@ -472,20 +473,21 @@ document.querySelector('.bulk').addEventListener('click', (e) => {
   renderUnits();
 });
 
-$('list-toggle').addEventListener('click', () => {
-  const form = $('list-form');
-  form.hidden = !form.hidden;
-  $('list-toggle').textContent = form.hidden ? 'Paste' : 'Cancel';
-  if (!form.hidden) $('list-input').focus();
-});
+function showListForm(open) {
+  $('list-form').hidden = !open;
+  $('list-toggle').parentElement.hidden = open;
+  if (open) $('list-input').focus();
+}
+
+$('list-toggle').addEventListener('click', () => showListForm(true));
+$('list-cancel').addEventListener('click', () => showListForm(false));
 
 $('list-load').addEventListener('click', () => {
   const result = applyArmyList($('list-input').value);
   renderListStatus(result.message);
   if (!result.ok) return;
   $('list-input').value = '';
-  $('list-form').hidden = true;
-  $('list-toggle').textContent = 'Paste';
+  showListForm(false);
   renderUnits();
 });
 
