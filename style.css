@@ -103,6 +103,23 @@ body {
   line-height: 1.5;
   color: var(--dim);
 }
+.note.pad { margin: 0; padding: 0 var(--pad); }
+.note.pad:empty { display: none; }
+
+#list-form { padding: 10px var(--pad) var(--pad); }
+#list-form textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  color: var(--text);
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  resize: vertical;
+}
+#list-form button { width: 100%; }
 .note a { color: var(--dim); }
 
 /* ── chips ───────────────────────────────────────────── */

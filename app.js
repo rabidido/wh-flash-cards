@@ -34,6 +34,8 @@ let DATA = null;
 let selected = new Set(store.get('selection', []));
 let kinds = new Set(store.get('kinds', ['unit', 'ranged', 'melee']));
 let progress = store.get('progress', {});      // card id -> {seen, ok, streak}
+let loadout = store.get('loadout', {});        // unit name -> weapon names taken
+let listName = store.get('listname', '');
 
 const session = { queue: [], card: null, total: 0, done: 0, answers: 0, right: 0, missed: [] };
 
@@ -84,9 +86,11 @@ function cardsFor(unit) {
       });
     }
   }
+  const taken = loadout[unit.name];
   for (const kind of ['ranged', 'melee']) {
     if (!kinds.has(kind)) continue;
     for (const weapon of unit[kind]) {
+      if (taken && !taken.includes(weapon.name)) continue;
       out.push({
         id: `${unit.name}|${kind}|${weapon.name}`,
         kindLabel: kind === 'ranged' ? 'Ranged weapon' : 'Melee weapon',
@@ -108,6 +112,128 @@ function selectedCards() {
 
 function countFor(unit) {
   return cardsFor(unit).length;
+}
+
+/* ── army lists ───────────────────────────────────────── */
+// Tolerant parser for the usual army list exports: a unit name per line
+// (optionally with its points), its wargear as bullets underneath, and a
+// metadata header that gets ignored.
+function norm(text) {
+  return String(text)
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+// "➤ Plasma caliver -  supercharge" and "Plasma caliver" are the same weapon.
+function baseName(weaponName) {
+  const clean = norm(weaponName).replace(/^[➤▶►>]\s*/, '');
+  const split = clean.indexOf(' - ');
+  return split > 0 ? clean.slice(0, split) : clean;
+}
+
+function parseArmyList(text) {
+  const entries = [];
+  let name = '';
+  let current = null;
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || /^[+=_*~-]{3,}$/.test(line)) continue;
+
+    const bullet = line.match(/^[•◦▪·*+-]\s*(.+)$/);
+    if (bullet) {
+      if (!current) continue;
+      const item = bullet[1].replace(/^\d+\s*x\s*/i, '').trim();
+      if (item && !/^enhancement\b/i.test(item)) current.items.push(item);
+      continue;
+    }
+
+    // "List Name: ...", "Detachment(s): ...", "CHARACTERS:" and friends. A unit
+    // line carries its points, so it never lands here.
+    const meta = line.match(/^([^:]{1,60}):\s*(.*)$/);
+    if (meta && !/\(\s*\d+\s*(pts|points)\s*\)/i.test(line)) {
+      if (/^list name$/i.test(meta[1].trim())) name = meta[2].trim();
+      continue;
+    }
+
+    const unitName = line
+      .replace(/\(\s*\d+\s*(pts|points)\s*\)\s*$/i, '')
+      .replace(/^\d+\s*x\s*/i, '')
+      .replace(/^[\w ]{1,12}:\s*/, '')       // "Char1: Belisarius Cawl"
+      .trim();
+    if (!unitName) continue;
+
+    current = entries.find((e) => norm(e.name) === norm(unitName));
+    if (!current) {
+      current = { name: unitName, items: [] };
+      entries.push(current);
+    }
+  }
+  return { name, entries };
+}
+
+function applyArmyList(text) {
+  const parsed = parseArmyList(text);
+  const byName = new Map(DATA.units.map((u) => [norm(u.name), u]));
+  const picked = new Set();
+  const nextLoadout = {};
+  const unknown = [];
+  let looseWeapons = 0;
+
+  for (const entry of parsed.entries) {
+    const key = norm(entry.name);
+    const unit = byName.get(key)
+      || DATA.units.find((u) => norm(u.name).startsWith(key) || key.startsWith(norm(u.name)));
+    if (!unit) {
+      unknown.push(entry.name);
+      continue;
+    }
+
+    const weapons = [...unit.ranged, ...unit.melee];
+    const taken = new Set(nextLoadout[unit.name] || []);
+    for (const item of entry.items) {
+      const wanted = norm(item);
+      // Model names, Warlord and non-weapon wargear simply match nothing.
+      for (const weapon of weapons) {
+        if (baseName(weapon.name) === wanted || norm(weapon.name) === wanted) taken.add(weapon.name);
+      }
+    }
+    picked.add(unit.name);
+    // Nothing recognised: keep the whole datasheet rather than a bare statline.
+    if (taken.size) nextLoadout[unit.name] = [...taken];
+    else looseWeapons++;
+  }
+
+  if (!picked.size) return { ok: false, message: 'No Adeptus Mechanicus units found in that text.' };
+
+  selected = picked;
+  loadout = nextLoadout;
+  listName = parsed.name;
+  store.set('selection', [...selected]);
+  store.set('loadout', loadout);
+  store.set('listname', listName);
+
+  let message = `${listName ? listName + ' · ' : ''}${picked.size} unit${picked.size === 1 ? '' : 's'}`;
+  if (looseWeapons) message += ` · ${looseWeapons} without recognised wargear (all weapons kept)`;
+  if (unknown.length) message += ` · not found: ${unknown.join(', ')}`;
+  return { ok: true, message };
+}
+
+function clearArmyList() {
+  loadout = {};
+  listName = '';
+  store.drop('loadout');
+  store.drop('listname');
+}
+
+function renderListStatus(message) {
+  const active = Object.keys(loadout).length > 0;
+  $('list-status').textContent = message !== undefined ? message
+    : active ? `${listName ? listName + ' · ' : ''}weapons limited to the list` : '';
+  $('list-clear').hidden = !active;
 }
 
 /* ── setup view ───────────────────────────────────────── */
@@ -346,6 +472,29 @@ document.querySelector('.bulk').addEventListener('click', (e) => {
   renderUnits();
 });
 
+$('list-toggle').addEventListener('click', () => {
+  const form = $('list-form');
+  form.hidden = !form.hidden;
+  $('list-toggle').textContent = form.hidden ? 'Paste' : 'Cancel';
+  if (!form.hidden) $('list-input').focus();
+});
+
+$('list-load').addEventListener('click', () => {
+  const result = applyArmyList($('list-input').value);
+  renderListStatus(result.message);
+  if (!result.ok) return;
+  $('list-input').value = '';
+  $('list-form').hidden = true;
+  $('list-toggle').textContent = 'Paste';
+  renderUnits();
+});
+
+$('list-clear').addEventListener('click', () => {
+  clearArmyList();
+  renderListStatus();
+  renderUnits();
+});
+
 $('start').addEventListener('click', () => startSession(selectedCards()));
 $('back').addEventListener('click', () => show('setup'));
 $('again').addEventListener('click', () => startSession(selectedCards()));
@@ -389,7 +538,11 @@ fetch('data/admech.json')
        (${esc(src.catalogue)}, rev ${esc(src.revision)}, commit
        <a href="https://github.com/${esc(src.repo)}/commit/${esc(src.commit)}">${esc(src.commit.slice(0, 7))}</a>).
        Legends and Crucible datasheets excluded. Not affiliated with Games Workshop.`;
+    for (const name of Object.keys(loadout)) {
+      if (!known.has(name)) delete loadout[name];
+    }
     renderKinds();
+    renderListStatus();
     renderUnits();
   })
   .catch(() => {

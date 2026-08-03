@@ -8,6 +8,27 @@ Pick the units you want to drill, tap a card to reveal the statline, mark
 yourself right or wrong. Cards you miss come back later in the same session,
 and how well you know each card is remembered between sessions.
 
+## Army lists
+
+Paste an army list export into **Army list → Paste** and the app selects the
+units in it and limits the weapon cards to the wargear you actually took —
+so a Ranger squad drills the four guns in your list, not all six on the
+datasheet.
+
+The parser is deliberately forgiving: unit names are read from unindented
+lines (with or without `(85 pts)`, and with a `Char1:` style prefix stripped),
+wargear from the bullets under them at any depth, `5x` counts and
+`Enhancement:` lines are dropped, and header lines like `Factions Used:` or
+`CHARACTERS:` are ignored. Bullets that are model names, Warlord marks or
+non-weapon wargear match nothing and are silently skipped, and one list
+entry matches every profile of a multi-profile weapon: `Eradication beamer`
+selects both the dissipated and focused rows.
+
+Units that aren't in the data — another faction, or a Legends datasheet — are
+named back to you. If a unit's wargear isn't recognised at all, that unit
+keeps its full set of weapons rather than showing a bare statline. **Clear**
+drops the weapon filter and keeps the units selected.
+
 ## Data
 
 Everything comes from the [BSData wh40k-11e](https://github.com/BSData/wh40k-11e)
@@ -66,9 +87,9 @@ tools/build_data.py generator
 ```
 
 Browser state lives in `localStorage` under the `admech-fc:` prefix: unit
-selection, which card kinds are enabled, and a per-card streak counter used to
-put weaker cards earlier in a session. The ↺ button on the setup screen clears
-the streaks.
+selection, which card kinds are enabled, the loaded list's per-unit weapons,
+and a per-card streak counter used to put weaker cards earlier in a session.
+The ↺ button on the setup screen clears the streaks.
 
 Not affiliated with Games Workshop. Warhammer 40,000 is a trademark of Games
 Workshop Ltd.

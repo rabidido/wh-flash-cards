@@ -25,6 +25,22 @@
 
   <section class="panel">
     <div class="panel-head">
+      <h2>Army list</h2>
+      <div class="bulk">
+        <button id="list-toggle" class="link-btn">Paste</button>
+        <button id="list-clear" class="link-btn" hidden>Clear</button>
+      </div>
+    </div>
+    <p id="list-status" class="note pad"></p>
+    <div id="list-form" hidden>
+      <textarea id="list-input" rows="6" spellcheck="false"
+        placeholder="Paste an army list export here to pick the units in it and drill only the weapons you took."></textarea>
+      <button id="list-load" class="primary">Load list</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
       <h2>Units</h2>
       <div class="bulk">
         <button data-bulk="all" class="link-btn">All</button>
