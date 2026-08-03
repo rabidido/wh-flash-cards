@@ -46,13 +46,18 @@ python3 -m http.server 8000
 
 ## GitHub Pages
 
-Settings → Pages → Build and deployment → Deploy from a branch, pick this
-branch and the `/ (root)` folder. The site is served as-is; there is nothing
-to build.
+Every push to `main` deploys via `.github/workflows/pages.yml`. This needs
+Settings → Pages → Build and deployment → Source set to **GitHub Actions**
+(once).
+
+The workflow copies `index.html`, `style.css`, `app.js`, `.nojekyll` and
+`data/` into `_site` and publishes that, so the generator and this README are
+not served. Adding a file to the site means adding it to the staging step.
 
 ## Layout
 
 ```
+.github/workflows/pages.yml   deploys to Pages on every push to main
 index.html          markup for the three views: setup, drill, results
 style.css           mobile-first dark theme
 app.js              card building, session queue, localStorage
