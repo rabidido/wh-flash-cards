@@ -6,9 +6,23 @@ S, AP, D, keywords).
 
 Pick the units you want to drill, hit Reveal to turn the statline over, and
 mark yourself right or wrong — or tap a single stat to peek at just that one.
-Revealing also shows pills for the weapon's keywords, or for a model's
-invulnerable save and Feel No Pain. Cards you miss come back later in the same
-session, and how well you know each card is remembered between sessions.
+Cards you miss come back later in the same session, and how well you know each
+card is remembered between sessions.
+
+## Keywords
+
+Keywords are drilled, not just displayed. A weapon card's front shows one
+empty pill per keyword, so you know how many to recall before turning it over,
+and tapping a revealed pill gives you the rule in full.
+
+**Weapon keywords** is also a card type of its own: one card per rule the
+weapons you selected actually use — front the keyword, back what it does. It
+is one card per rule rather than per weapon, since learning Sustained Hits
+twice is not learning it twice. Across the whole faction that is 16 cards.
+
+A model's invulnerable save and Feel No Pain show as pills too, in red rather
+than brass, since they are what keeps the model alive rather than what it
+shoots with.
 
 Skip drops a card you don't care about. It leaves the current session
 immediately and never comes back, until you hit Restore above the unit list.
@@ -100,6 +114,14 @@ Feel No Pain is not a profile in the source data — it is a rule link whose
 value is appended to its name (`Feel No Pain` + `5+`), so the generator reads
 it from the rule links a datasheet reaches, and only when it carries a
 concrete value. Invulnerable saves come from the `InSv` characteristic.
+
+Keyword rule text comes from the game system's shared rules. A keyword on a
+weapon carries its parameter (`Sustained Hits 1`, `Anti-Vehicle 4+`) while the
+rule is filed under the bare name, so lookup falls back from the full string,
+to the string without a trailing parameter, to the part before a hyphen. All
+32 keyword spellings the faction uses — including the source's inconsistent
+casing — resolve to 16 rules; anything that fails to resolve is reported when
+the data is generated.
 
 Not affiliated with Games Workshop. Warhammer 40,000 is a trademark of Games
 Workshop Ltd.

@@ -192,6 +192,49 @@ def build_unit(name, entry, index):
     }
 
 
+def keyword_rules(units, game_system):
+    """Map every weapon keyword used by the faction to its rule text.
+
+    A keyword on a weapon carries its parameter — "Sustained Hits 1",
+    "Anti-Vehicle 4+" — while the rule is filed under the bare name.
+    """
+    rules = {}
+    for rule in game_system.get("sharedRules", []) or []:
+        rules[clean(rule["name"]).lower()] = rule
+
+    def lookup(keyword):
+        candidates = [keyword.lower()]
+        # drop a trailing parameter: "1", "4+", "6\""
+        candidates.append(re.sub(r'\s+\d+\+?"?$', "", keyword).lower())
+        # "Anti-Vehicle 4+" is filed under "Anti"
+        candidates.append(re.split(r"[-‑]", keyword)[0].strip().lower())
+        for candidate in candidates:
+            if candidate in rules:
+                return rules[candidate]
+        return None
+
+    used, missing = {}, set()
+    for unit in units:
+        for weapon in unit["ranged"] + unit["melee"]:
+            for keyword in split_keywords(weapon["kw"]):
+                rule = lookup(keyword)
+                if rule is None:
+                    missing.add(keyword)
+                    continue
+                name = clean(rule["name"])
+                used[name] = clean(rule.get("description"))
+
+    for keyword in sorted(missing):
+        print(f"warning: no rule found for keyword {keyword!r}", file=sys.stderr)
+    return used
+
+
+def split_keywords(keywords):
+    if not keywords or keywords == "-":
+        return []
+    return [k.strip() for k in keywords.split(",") if k.strip()]
+
+
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else "wh40k-11e"
     index, roots = load(src)
@@ -221,8 +264,11 @@ def main():
     except Exception:
         commit = "unknown"
 
+    keywords = keyword_rules(units, roots[GAME_SYSTEM])
+
     data = {
         "faction": "Adeptus Mechanicus",
+        "keywordRules": keywords,
         "source": {
             "repo": "BSData/wh40k-11e",
             "commit": commit,

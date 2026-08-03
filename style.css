@@ -377,6 +377,18 @@ button.secondary { background: var(--panel-2); border-color: var(--line); color:
   user-select: text;
 }
 
+.pill.ghost {
+  min-width: 34px;
+  color: #6d635c;
+  text-align: center;
+  background: none;
+  border-style: dashed;
+  border-color: #4a4038;
+}
+
+.pill.tappable { border-style: solid; }
+.pill.tappable:active { background: rgba(201, 162, 39, .28); }
+
 /* Saves are what keeps the model alive — worth telling apart at a glance. */
 .pill.save {
   color: #f0c9ce;
@@ -394,6 +406,17 @@ button.secondary { background: var(--panel-2); border-color: var(--line); color:
   color: var(--dim);
   border-top: 1px solid var(--line);
 }
+
+.card-text {
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #d6cec7;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.card-text b { display: block; margin-bottom: 2px; color: var(--brass); }
+.card-text em { font-style: normal; color: var(--brass); }
 
 .hint { margin: 16px 0 0; font-size: 12px; color: #6d635c; text-align: center; }
 

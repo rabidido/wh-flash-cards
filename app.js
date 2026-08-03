@@ -25,7 +25,8 @@ const store = {
 const KINDS = [
   { id: 'unit', label: 'Unit stats' },
   { id: 'ranged', label: 'Ranged weapons' },
-  { id: 'melee', label: 'Melee weapons' }
+  { id: 'melee', label: 'Melee weapons' },
+  { id: 'keyword', label: 'Weapon keywords' }
 ];
 const ROLE_ORDER = ['Epic Hero', 'Character', 'Battleline', 'Infantry', 'Mounted',
                     'Vehicle', 'Dedicated Transport'];
@@ -115,12 +116,66 @@ function keywordPills(keywords) {
   return keywords.split(',').map((k) => ({ text: k.trim() })).filter((p) => p.text);
 }
 
+/* A keyword carries its parameter — "Sustained Hits 1", "Anti-Vehicle 4+" —
+   while the rule it points at is filed under the bare name. */
+function ruleNameFor(keyword) {
+  const rules = DATA.keywordRules || {};
+  const tries = [
+    keyword,
+    keyword.replace(/\s+\d+\+?"?$/, ''),
+    keyword.split(/[-‑]/)[0].trim()
+  ].map((t) => t.toLowerCase());
+  for (const name of Object.keys(rules)) {
+    if (tries.includes(name.toLowerCase())) return name;
+  }
+  return '';
+}
+
+function keywordLabel(name) {
+  return name === 'Anti' ? 'Anti-X Y+' : name;
+}
+
+/* Keywords are rules, not per-unit facts, so one card covers every weapon
+   that has it — learning Sustained Hits twice is not learning it twice. */
+function keywordCards(units) {
+  const found = new Map();                       // rule name -> example keyword
+  for (const unit of units) {
+    const taken = loadout[unit.name];
+    for (const kind of ['ranged', 'melee']) {
+      for (const weapon of unit[kind]) {
+        if (taken && !taken.includes(weapon.name)) continue;
+        for (const pill of keywordPills(weapon.kw)) {
+          const rule = ruleNameFor(pill.text);
+          if (rule && !found.has(rule)) found.set(rule, pill.text);
+        }
+      }
+    }
+  }
+
+  return [...found].map(([rule, example]) => ({
+    id: `keyword|${rule.toLowerCase()}`,
+    kindLabel: 'Weapon keyword',
+    title: keywordLabel(rule),
+    sub: example.toLowerCase() === rule.toLowerCase() ? '' : `on your weapons as “${example}”`,
+    text: DATA.keywordRules[rule],
+    pills: [],
+    unit: null
+  })).filter((card) => !skipped.has(card.id));
+}
+
 function pillsHTML(pills) {
-  return pills.map((p) => `<span class="pill${p.kind ? ' ' + p.kind : ''}">${esc(p.text)}</span>`).join('');
+  return pills.map((p) => {
+    const rule = p.kind ? '' : ruleNameFor(p.text);
+    const cls = `pill${p.kind ? ' ' + p.kind : ''}${rule ? ' tappable' : ''}`;
+    return `<span class="${cls}"${rule ? ` data-rule="${esc(rule)}"` : ''}>${esc(p.text)}</span>`;
+  }).join('');
 }
 
 function selectedCards() {
-  return DATA.units.filter((u) => selected.has(u.name)).flatMap(cardsFor);
+  const units = DATA.units.filter((u) => selected.has(u.name));
+  const cards = units.flatMap(cardsFor);
+  if (kinds.has('keyword')) cards.push(...keywordCards(units));
+  return cards;
 }
 
 function countFor(unit) {
@@ -357,15 +412,20 @@ function nextCard() {
 
 function renderCard() {
   const card = session.card;
+  const prose = Boolean(card.text);
   $('card-kind').textContent = card.kindLabel;
   $('card-title').textContent = card.title;
   $('card-sub').textContent = card.sub;
-  $('statline').innerHTML = card.labels.map((label, i) => `
+  $('statline').hidden = prose;
+  $('statline').innerHTML = prose ? '' : card.labels.map((label, i) => `
     <button class="stat${card.values[i].length > 3 ? ' small' : ''}" data-i="${i}">
       <span class="lbl">${label}</span><span class="val">?</span>
     </button>`).join('');
-  $('card-pills').innerHTML = '';
-  $('hint').hidden = false;
+  // Show how many keywords there are to remember, without saying which.
+  $('card-pills').innerHTML = card.pills.map(() => '<span class="pill ghost">?</span>').join('');
+  $('card-text').hidden = true;
+  $('card-text').innerHTML = '';
+  $('hint').hidden = prose;
   $('revealbar').hidden = false;
   $('gradebar').hidden = true;
   $('card-detail').hidden = true;
@@ -389,14 +449,20 @@ function revealStat(i) {
 
 function revealAll() {
   if ($('card').dataset.revealed === 'true') return;
+  const card = session.card;
   $('card').dataset.revealed = 'true';
-  session.card.values.forEach((_, i) => revealStat(i));
-  $('card-pills').innerHTML = pillsHTML(session.card.pills);
+  if (card.text) {
+    $('card-text').innerHTML = rich(card.text);
+    $('card-text').hidden = false;
+  } else {
+    card.values.forEach((_, i) => revealStat(i));
+  }
+  $('card-pills').innerHTML = pillsHTML(card.pills);
   $('hint').hidden = true;
   $('revealbar').hidden = true;
   $('gradebar').hidden = false;
-  $('card-detail').hidden = false;
-  $('detail-body').innerHTML = datasheetHTML(session.card.unit);
+  $('card-detail').hidden = !card.unit;
+  $('detail-body').innerHTML = card.unit ? datasheetHTML(card.unit) : '';
 }
 
 function grade(ok) {
@@ -543,6 +609,15 @@ $('redo').addEventListener('click', () => {
 });
 
 $('card').addEventListener('click', (e) => {
+  // A revealed keyword pill explains itself when you tap it.
+  const pill = e.target.closest('[data-rule]');
+  if (pill) {
+    const name = pill.dataset.rule;
+    $('card-text').innerHTML =
+      `<b>${esc(keywordLabel(name))}</b>${rich(DATA.keywordRules[name])}`;
+    $('card-text').hidden = false;
+    return;
+  }
   if (e.target.closest('#card-detail')) return;
   const cell = e.target.closest('[data-i]');
   if (cell && $('card').dataset.revealed === 'false') {
