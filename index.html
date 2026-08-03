@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12100e">
+<title>AdMech Flash Cards</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚙</text></svg>">
+</head>
+<body>
+
+<header id="topbar">
+  <button id="back" class="icon-btn" hidden aria-label="Back to unit selection">‹</button>
+  <h1 id="title">Adeptus Mechanicus</h1>
+  <button id="reset-progress" class="icon-btn" aria-label="Reset saved progress" title="Reset saved progress">↺</button>
+</header>
+
+<!-- ── setup ───────────────────────────────────────────── -->
+<main id="setup" class="view">
+  <section class="panel">
+    <h2>Train on</h2>
+    <div id="kinds" class="chips"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Units</h2>
+      <div class="bulk">
+        <button data-bulk="all" class="link-btn">All</button>
+        <button data-bulk="none" class="link-btn">None</button>
+      </div>
+    </div>
+    <div id="unit-list"></div>
+  </section>
+
+  <p id="source-note" class="note"></p>
+  <div class="spacer"></div>
+</main>
+
+<div id="startbar" class="bottombar">
+  <button id="start" class="primary">Start</button>
+</div>
+
+<!-- ── drill ───────────────────────────────────────────── -->
+<main id="drill" class="view" hidden>
+  <div id="progress"><div id="progress-fill"></div></div>
+  <p id="counter" class="counter"></p>
+
+  <div id="card" class="card">
+    <p id="card-kind" class="card-kind"></p>
+    <h2 id="card-title"></h2>
+    <p id="card-sub" class="card-sub"></p>
+    <div id="statline" class="statline"></div>
+    <p id="card-extra" class="card-extra"></p>
+    <p id="hint" class="hint">tap to reveal</p>
+    <details id="card-detail" hidden><summary>Datasheet</summary><div id="detail-body"></div></details>
+  </div>
+
+  <div id="gradebar" class="bottombar two" hidden>
+    <button id="miss" class="grade miss">Missed</button>
+    <button id="hit" class="grade hit">Got it</button>
+  </div>
+</main>
+
+<!-- ── summary ─────────────────────────────────────────── -->
+<main id="summary" class="view" hidden>
+  <section class="panel">
+    <h2>Session complete</h2>
+    <p id="score" class="score"></p>
+    <h2 id="missed-head">Missed</h2>
+    <ul id="missed-list" class="missed"></ul>
+  </section>
+  <div class="spacer"></div>
+</main>
+
+<div id="summarybar" class="bottombar two" hidden>
+  <button id="redo" class="secondary">Redo missed</button>
+  <button id="again" class="primary">New session</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
