@@ -21,10 +21,14 @@
 /* The native tap highlight is off, so every touch target states its own
    pressed look — without it a tap that lands looks like nothing happened. */
 button:active { filter: brightness(1.4); }
-.unit-pick:active, .peek:active, .card:active, .stat:active, button.wide:active {
+.unit-pick:active, .peek:active, button.wide:active {
   background: #322c28;
   filter: none;
 }
+
+/* Every tap on a card already shows something — a stat, a pill, the whole
+   answer — so a press flash on top of that just reads as a blink. */
+.card:active, .card *:active { filter: none; }
 
 html, body {
   margin: 0;
@@ -389,7 +393,6 @@ button.secondary { background: var(--panel-2); border-color: var(--line); color:
 }
 
 .pill.tappable { border-style: solid; }
-.pill.tappable:active { background: rgba(201, 162, 39, .28); }
 
 /* Saves are what keeps the model alive — worth telling apart at a glance. */
 .pill.save {
